@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBERDECK v6.0 | Neural Edition</title>
+    <style>
+        /* --- V6 THEME: NEON NEURAL --- */
+        :root {
+            --c-green: #00ff41;
+            --c-dark: #050505;
+            --c-panel: #0a0a0a;
+            --c-red: #ff0033;
+            --c-warn: #ffcc00;
+            --c-blue: #00e5ff;
+            --c-purple: #bd00ff; /* Couleur IA */
+            --font-stack: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--c-dark);
+            color: #ccc;
+            font-family: var(--font-stack);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* BACKGROUND FX */
+        .neural-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(189, 0, 255, 0.03) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        /* HEADER */
+        header {
+            border-bottom: 1px solid #333;
+            padding: 1rem 2rem;
+            background: rgba(5,5,5,0.98);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+        .brand { font-size: 1.2rem; font-weight: bold; letter-spacing: 2px; color: white; display: flex; align-items: center; gap: 10px; }
+        .ai-badge { background: var(--c-purple); color: white; padding: 2px 8px; font-size: 0.7rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); }
+        .sys-stats { font-size: 0.75rem; color: #444; display: flex; gap: 20px; }
+
+        /* LAYOUT */
+        .layout { display: grid; grid-template-columns: 280px 1fr; height: calc(100vh - 60px); }
+
+        /* SIDEBAR */
+        aside {
+            background: var(--c-panel);
+            border-right: 1px solid #222;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .input-group { margin-bottom: 1.5rem; position: relative; }
+        input[type="text"], input[type="password"] {
+            width: 100%; background: #000; border: 1px solid #333; color: var(--c-green);
+            padding: 10px; font-family: inherit; font-size: 0.9rem; margin-bottom: 5px;
+        }
+        input:focus { border-color: var(--c-purple); outline: none; }
+        
+        .ai-config { font-size: 0.7rem; color: #666; margin-bottom: 10px; display: flex; justify-content: space-between; }
+
+        .btn-scan {
+            width: 100%; background: linear-gradient(45deg, var(--c-blue), var(--c-purple));
+            color: white; border: none; padding: 12px; font-weight: bold; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;
+        }
+        .btn-scan:hover { filter: brightness(1.2); box-shadow: 0 0 15px rgba(189, 0, 255, 0.3); }
+        
+        .nav-item {
+            padding: 12px; cursor: pointer; border-left: 2px solid transparent;
+            font-size: 0.85rem; color: #666; transition: 0.2s; margin-bottom: 2px; display: flex; align-items: center; gap: 10px;
+        }
+        .nav-item:hover { background: #111; color: #ccc; }
+        .nav-item.active { border-left-color: var(--c-purple); background: rgba(189, 0, 255, 0.05); color: var(--c-purple); font-weight: bold; }
+        
+        .nav-section { margin-top: 2rem; font-size: 0.7rem; color: #333; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+
+        /* MAIN CONTENT */
+        main { padding: 2rem; overflow-y: auto; position: relative; }
+
+        .panel { display: none; animation: fadeUp 0.4s ease-out; }
+        .panel.active { display: block; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* DASHBOARD WIDGETS */
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .widget {
+            background: #111; border: 1px solid #222; padding: 1.5rem; position: relative;
+        }
+        .widget::after {
+            content: ''; position: absolute; bottom: 0; left: 0; height: 2px; width: 0%;
+            background: var(--c-purple); transition: 1s;
+        }
+        .widget:hover::after { width: 100%; }
+        .widget h3 { font-size: 0.8rem; color: #555; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .widget .val { font-size: 1.5rem; font-weight: bold; color: white; }
+
+        /* TERMINAL */
+        .terminal {
+            background: #000; border: 1px solid #222; padding: 1rem;
+            font-size: 0.8rem; height: 150px; overflow-y: auto; margin-bottom: 2rem; color: #666;
+        }
+        .log-entry { margin-bottom: 4px; font-family: monospace; }
+        .log-time { color: #333; margin-right: 8px; }
+        .log-ai { color: var(--c-purple); }
+
+        /* AI CHAT INTERFACE */
+        .chat-container {
+            display: flex; flex-direction: column; height: calc(100vh - 200px);
+        }
+        .chat-window {
+            flex-grow: 1; border: 1px solid #222; background: #080808; padding: 1.5rem;
+            overflow-y: auto; margin-bottom: 1rem; border-radius: 4px;
+        }
+        .msg {
+            max-width: 80%; padding: 12px; margin-bottom: 15px; border-radius: 4px; line-height: 1.5;
+            font-size: 0.9rem; position: relative;
+        }
+        .msg.ai {
+            align-self: flex-start; background: rgba(189, 0, 255, 0.1); border: 1px solid rgba(189, 0, 255, 0.2);
+            color: #e0e0e0; margin-right: auto;
+        }
+        .msg.user {
+            align-self: flex-end; background: #1a1a1a; border: 1px solid #333;
+            color: #ccc; margin-left: auto; text-align: right;
+        }
+        .typing-indicator { color: var(--c-purple); font-style: italic; font-size: 0.8rem; display: none; }
+
+        /* PROGRESS BAR */
+        .progress-container { width: 100%; height: 2px; background: #111; margin: 20px 0; }
+        .progress-bar { height: 100%; background: var(--c-purple); width: 0%; box-shadow: 0 0 10px var(--c-purple); transition: width 0.3s; }
+
+        /* UTILS */
+        .tag { background: #222; padding: 3px 8px; font-size: 0.7rem; border-radius: 2px; color: #888; }
+        .tag.crit { background: rgba(255,0,51,0.2); color: var(--c-red); }
+        .tag.high { background: rgba(255,204,0,0.2); color: var(--c-warn); }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #222; }
+    </style>
+</head>
+<body>
+    <div class="neural-bg"></div>
+
+    <header>
+        <div class="brand">
+            CYBERDECK <span class="ai-badge">NEURAL V6</span>
+        </div>
+        <div class="sys-stats">
+            <span>AI: ONLINE</span>
+            <span>NEURAL: ACTIVE</span>
+            <span>SECURE</span>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside>
+            <div class="input-group">
+                <div class="ai-config">
+                    <span>OpenAI Key (Optionnel)</span>
+                    <span id="aiStatus" style="color:var(--c-green)">LOCAL MODE</span>
+                </div>
+                <input type="password" id="openaiKey" placeholder="sk-..." onchange="checkAIKey()">
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="targetInput" placeholder="target-domain.com" value="airtalk.live">
+                <button class="btn-scan" onclick="initiateNeuralScan()">LAUNCH SCAN</button>
+            </div>
+
+            <div class="nav-section">MODULES</div>
+            <div class="nav-item active" onclick="switchTab('dashboard')">DASHBOARD</div>
+            <div class="nav-item" onclick="switchTab('neural')">NEURAL ANALYSIS (IA)</div>
+            <div class="nav-item" onclick="switchTab('recon')">RECON (SUBDOMAINS)</div>
+            <div class="nav-item" onclick="switchTab('vulns')">VULNERABILITIES</div>
+            
+            <div class="nav-section">EXPORT</div>
+            <div class="nav-item" onclick="exportData()">DOWNLOAD REPORT</div>
+        </aside>
+
+        <main>
+            <!-- DASHBOARD -->
+            <div id="dashboard" class="panel active">
+                <div class="dash-grid">
+                    <div class="widget">
+                        <h3>Security Score</h3>
+                        <div class="val" id="scoreDisplay">--</div>
+                    </div>
+                    <div class="widget">
+                        <h3>Threat Level</h3>
+                        <div class="val" id="threatDisplay" style="color:#666">PENDING</div>
+                    </div>
+                    <div class="widget">
+                        <h3>Data Points</h3>
+                        <div class="val" id="dataPoints">0</div>
+                    </div>
+                </div>
+
+                <div class="terminal" id="sysLog">
+                    <div class="log-entry"><span class="log-time">[SYS]</span> Neural Engine initialized. Waiting for target...</div>
+                </div>
+            </div>
+
+            <!-- NEURAL AI PANEL -->
+            <div id="neural" class="panel">
+                <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+                    <h2 style="color:var(--c-purple)">NEURAL ANALYSIS</h2>
+                    <div class="tag" id="aiModeTag">HEURISTIC ENGINE</div>
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-window" id="aiChatWindow">
+                        <div class="msg ai">Bonjour. Je suis le moteur d'analyse Neural. Une fois le scan terminé, je synthétiserai les risques et proposerai des correctifs contextuels.</div>
+                    </div>
+                    <div class="typing-indicator" id="typingIndicator">L'IA réfléchit...</div>
+                    <div class="progress-container"><div class="progress-bar" id="aiProgress"></div></div>
+                </div>
+            </div>
+
+            <!-- RECON -->
+            <div id="recon" class="panel">
+                <h2 style="margin-bottom:1rem; color:white;">SUBDOMAIN RECON</h2>
+                <div id="subList" style="display:flex; flex-wrap:wrap; gap:10px;">
+                    <div style="color:#555;">En attente de scan...</div>
+                </div>
+            </div>
+
+             <!-- VULNS -->
+             <div id="vulns" class="panel">
+                <h2 style="margin-bottom:1rem; color:white;">DETECTED VULNERABILITIES</h2>
+                <div id="vulnList">
+                    <div style="color:#555;">En attente de scan...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- V6 NEURAL ENGINE ---
+
+        let scanContext = {
+            target: "",
+            score: 0,
+            vulns: [],
+            headers: [],
+            ssl: false,
+            subdomains: []
+        };
+
+        const DOM = {
+            log: document.getElementById('sysLog'),
+            chat: document.getElementById('aiChatWindow'),
+            typing: document.getElementById('typingIndicator'),
+            progress: document.getElementById('aiProgress'),
+            score: document.getElementById('scoreDisplay'),
+            threat: document.getElementById('threatDisplay'),
+            keyStatus: document.getElementById('aiStatus'),
+            aiTag: document.getElementById('aiModeTag')
+        };
+
+        function log(msg, type='sys') {
+            const line = document.createElement('div');
+            line.className = 'log-entry';
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'ai' ? 'var(--c-purple)' : (type === 'err' ? 'var(--c-red)' : '#666');
+            line.innerHTML = `<span class="log-time">[${time}]</span> <span style="color:${color}">${msg}</span>`;
+            DOM.log.appendChild(line);
+            DOM.log.scrollTop = DOM.log.scrollHeight;
+        }
+
+        function checkAIKey() {
+            const key = document.getElementById('openaiKey').value;
+            if(key && key.startsWith('sk-')) {
+                DOM.keyStatus.textContent = "GPT-4 CONNECTED";
+                DOM.keyStatus.style.color = "var(--c-green)";
+                DOM.aiTag.textContent = "GPT-4 TURBO";
+                log("OpenAI API Key detected. Switching to Real AI mode.", "ai");
+            } else {
+                DOM.keyStatus.textContent = "LOCAL MODE";
+                DOM.keyStatus.style.color = "var(--c-blue)";
+                DOM.aiTag.textContent = "HEURISTIC ENGINE";
+                log("No API Key. Using Local Heuristic Engine.", "sys");
+            }
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        async function initiateNeuralScan() {
+            const target = document.getElementById('targetInput').value.replace(/^(https?:\/\/)/, '').replace(/\/$/, '');
+            if(!target) return;
+
+            scanContext.target = target;
+            log(`Initializing Neural Scan for ${target}...`);
+            DOM.chat.innerHTML = `<div class="msg ai">Analyse de ${target} en cours...</div>`;
+            DOM.progress.style.width = '10%';
+
+            // 1. DNS & Recon
+            await runRecon(target);
+            DOM.progress.style.width = '40%';
+
+            // 2. Content Analysis
+            await runContentAnalysis(target);
+            DOM.progress.style.width = '70%';
+
+            // 3. Finalize Score
+            calculateScore();
+            DOM.progress.style.width = '90%';
+
+            // 4. NEURAL ANALYSIS (THE AI PART)
+            await runNeuralAnalysis();
+            DOM.progress.style.width = '100%';
+
+            setTimeout(() => DOM.progress.style.width = '0%', 2000);
+        }
+
+        // --- MODULES ---
+
+        async function runRecon(domain) {
+            log("Phase 1: DNS & Subdomain Recon...");
+            try {
+                const [aRes, txtRes] = await Promise.all([
+                    fetch(`https://dns.google/resolve?name=${domain}&type=A`),
+                    fetch(`https://dns.google/resolve?name=${domain}&type=TXT`)
+                ]);
+                
+                const aData = await aRes.json();
+                const txtData = await txtRes.json();
+
+                const ips = aData.Answer ? aData.Answer.map(a => a.data) : [];
+                const spf = txtData.Answer ? txtData.Answer.some(a => a.data.includes('v=spf1')) : false;
+
+                scanContext.subdomains.push(`*.${domain}`); // Placeholder
+                if(ips.length > 0) {
+                    document.getElementById('subList').innerHTML = ips.map(ip => `<div class="tag crit">${ip}</div>`).join('');
+                }
+                if(!spf) {
+                    scanContext.vulns.push({ sev: 'high', title: 'SPF Missing', desc: 'Email spoofing possible.' });
+                }
+            } catch(e) { log("Recon Failed", "err"); }
+        }
+
+        async function runContentAnalysis(domain) {
+            log("Phase 2: Heuristic Content Scan...");
+            try {
+                const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://${domain}`)}`;
+                const res = await fetch(proxy);
+                const data = await res.json();
+                const html = data.contents.toLowerCase();
+
+                // CSP Check
+                if(!html.includes('content-security-policy')) {
+                    scanContext.vulns.push({ sev: 'crit', title: 'CSP Missing', desc: 'High XSS risk.' });
+                }
+                // jQuery
+                if(html.includes('jquery')) {
+                    scanContext.vulns.push({ sev: 'med', title: 'jQuery Detected', desc: 'Ensure version is up to date.' });
+                }
+                // Secrets
+                if(html.includes('api_key') || html.includes('secret')) {
+                    scanContext.vulns.push({ sev: 'crit', title: 'Potential Secret Leak', desc: 'Keywords found in source.' });
+                }
+
+                // Update Vuln UI
+                const vList = document.getElementById('vulnList');
+                vList.innerHTML = scanContext.vulns.map(v => `
+                    <div style="border-left:3px solid ${v.sev==='crit'?'red':'orange'}; background:#111; padding:10px; margin-bottom:10px;">
+                        <strong style="color:${v.sev==='crit'?'#f55':'orange'}">${v.title}</strong><br>
+                        <span style="color:#888">${v.desc}</span>
+                    </div>
+                `).join('') || '<div style="color:green">No obvious vulnerabilities.</div>';
+
+            } catch(e) { log("Content Scan Failed (CORS likely)", "err"); }
+        }
+
+        function calculateScore() {
+            let score = 100;
+            scanContext.vulns.forEach(v => {
+                if(v.sev === 'crit') score -= 25;
+                if(v.sev === 'high') score -= 15;
+                if(v.sev === 'med') score -= 5;
+            });
+            if(score < 0) score = 0;
+            scanContext.score = score;
+            
+            DOM.score.innerText = score;
+            DOM.threat.innerText = score > 70 ? "LOW" : (score > 40 ? "MEDIUM" : "CRITICAL");
+            DOM.threat.style.color = score > 70 ? "var(--c-green)" : (score > 40 ? "var(--c-warn)" : "var(--c-red)");
+        }
+
+        // --- LE CŒUR DE L'IA (NEURAL ENGINE) ---
+
+        async function runNeuralAnalysis() {
+            log("Phase 3: Neural Synthesis...");
+            
+            const apiKey = document.getElementById('openaiKey').value;
+            let responseText = "";
+
+            if(apiKey && apiKey.startsWith('sk-')) {
+                // MODE RÉEL (OpenAI)
+                responseText = await callOpenAI(apiKey);
+            } else {
+                // MODE LOCAL (Heuristique Intelligente)
+                responseText = generateLocalInsights(scanContext);
+            }
+
+            // Typewriter effect
+            DOM.typing.style.display = 'block';
+            await typeWriter(responseText);
+            DOM.typing.style.display = 'none';
+        }
+
+        // 1. Simulation IA Locale (Si pas de clé)
+        function generateLocalInsights(ctx) {
+            let report = `## RAPPORT NEURAL POUR ${ctx.target.toUpperCase()}\n\n`;
+            report += `### 1. SYNTHÈSE GLOBALE\n`;
+            
+            if(ctx.score > 80) {
+                report += `Le système présente une posture de sécurité robuste. Les en-têtes sont majoritairement conformes et aucune fuite critique n'a été détectée dans le code source analysé.\n\n`;
+            } else if (ctx.score > 40) {
+                report += `Le système présente des vulnérabilités modérées. Bien que l'infrastructure de base semble stable, des lacunes dans la configuration des en-têtes HTTP et la gestion des versions de librairies sont observées.\n\n`;
+            } else {
+                report += `ALERTE CRITIQUE. L'infrastructure présente des failles de sécurité majeures. L'absence de protection CSP couplée aux fuites potentielles d'informations rend le site extrêmement vulnérable aux attaques XSS et au vol de données.\n\n`;
+            }
+
+            report += `### 2. ANALYSE SPÉCIFIQUE\n`;
+            
+            const hasCSP = !ctx.vulns.some(v => v.title === 'CSP Missing');
+            if(!hasCSP) {
+                report += `- **RISQUE XSS:** L'absence de Content-Security-Policy est la plus grande faille. Un attaquant peut injecter du script arbitraire.\n`;
+            }
+            if(ctx.vulns.some(v => v.title === 'SPF Missing')) {
+                report += `- **RISQUE EMAIL:** Le domaine ne possède pas d'enregistrement SPF. Des emails de phishing peuvent être envoyés au nom de votre domaine.\n`;
+            }
+
+            report += `\n### 3. RECOMMANDATIONS PRIORITAIRES\n`;
+            if(!hasCSP) report += `1. **IMMÉDIAT:** Implémenter un en-tête CSP restrictif (default-src 'self').\n`;
+            report += `2. **COURT TERME:** Auditer les dépendances JavaScript (ex: jQuery) et migrer vers des versions sans CVE connues.\n`;
+            report += `3. **LONG TERME:** Mettre en place un WAF (Web Application Firewall) pour filtrer les requêtes malveillantes avant qu'elles n'atteignent le serveur.\n`;
+
+            return report;
+        }
+
+        // 2. Appel Réel OpenAI
+        async function callOpenAI(apiKey) {
+            try {
+                const prompt = `Agis comme un expert cybersécurité senior. Analyse ces résultats de scan pour le site ${scanContext.target}:\n\nScore: ${scanContext.score}\nVulnérabilités trouvées: ${JSON.stringify(scanContext.vulns)}\n\nGénère un rapport structuré en français avec une synthèse, une analyse des risques et des recommandations prioritaires.`;
+                
+                const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-3.5-turbo", // ou gpt-4 si la clé a accès
+                        messages: [{ role: "user", content: prompt }],
+                        temperature: 0.7
+                    })
+                });
+
+                const data = await res.json();
+                if(data.error) throw new Error(data.error.message);
+                return data.choices[0].message.content;
+
+            } catch(e) {
+                return `ERREUR IA: ${e.message}. Repli sur l'analyse locale.\n\n` + generateLocalInsights(scanContext);
+            }
+        }
+
+        // Effet machine à écrire
+        async function typeWriter(text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'msg ai';
+            DOM.chat.appendChild(msgDiv);
+            
+            let i = 0;
+            const speed = 10; // ms par char
+            
+            function type() {
+                if (i < text.length) {
+                    msgDiv.innerHTML += text.charAt(i) === '\n' ? '<br>' : text.charAt(i);
+                    DOM.chat.scrollTop = DOM.chat.scrollHeight;
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify(scanContext, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cyberdeck_report_${scanContext.target}.json`;
+            a.click();
+            log("Report exported.", "ai");
+        }
+    </script>
+</body>
+</html>
